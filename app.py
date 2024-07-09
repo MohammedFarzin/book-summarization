@@ -82,7 +82,7 @@ while True:
         print("All summaries generated")
         print(summary_generated)
         for i in range(len(summary_generated)):
-            with open(f"summary_{book_names[i]}.txt", "w") as file:
+            with open(f"summary/summary_{book_names[i]}.txt", "w", encoding="utf-8") as file:
                 file.write(summary_generated[i])
         break  
     
