@@ -53,44 +53,46 @@ def chat_template_creation(book_names, authors):
     return chat_template
 
 # Function to generate summary for each book
-def summary_generation(message):
+def summary_generation(chat_templates):
+    global current_index
+    message = chat_templates[current_index]
+    current_index += 1
+
     print("summary_generation:", message[0].get("content"))
+
+
     chat_completion = client.chat.completions.create(
     model="mixtral-8x7b-32768",
     messages=message,
     temperature=0.5,
     max_tokens=1024
     )
-    print(chat_completion.choices[0].message.content)
+
+    # summary_generated.append(chat_completion.choices[0].message.content)
+    print("content:   ", chat_completion.choices[0].message.content)
+    # print("summary_generated_list:    ", summary_generated)
+
+
+    with open(f"summary/summary_of_{book_names[current_index-1]}.txt", "w", encoding="utf-8") as file:
+        file.write(chat_completion.choices[0].message.content)
 
     return chat_completion.choices[0].message.content
 
-    
 
-# Wrapper function to pass message to summary_generation function
-def wrapper_function(message):
-    print("wrapper_function", message[0].get("content"))
-    summary = summary_generation(message)
-    summary_generated.append(summary)
 
 
 # Create chat template for each book
 chat_template = chat_template_creation(book_names, authors)
-current_index = 0 # Global iterator
-for message in chat_template: 
-    print(message[0].get("content"))
-    schedule.every(5).seconds.do(wrapper_function, message)
+current_index = 0   # Global iterator
+
+
+schedule.every(2).minutes.do(summary_generation, chat_template)
   
 # Run the schedule
 while True:
     schedule.run_pending()
     time.sleep(1)
-    if len(summary_generated) == len(chat_template):
-        print("All summaries generated")
-        print(summary_generated)
-        for i in range(len(summary_generated)):
-            with open(f"summary/summary_{book_names[i]}.txt", "w", encoding="utf-8") as file:
-                file.write(summary_generated[i])
+    if current_index == len(chat_template):
         break  
     
     
