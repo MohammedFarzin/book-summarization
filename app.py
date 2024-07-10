@@ -12,11 +12,14 @@ print(GROQ_API_KEY)
 
 client = Groq(api_key=GROQ_API_KEY)
 
+# List of books and authors
 book_names = ["Atomic Habits", "Magic of Thinking Big", "Think and Grow Rich", "The Secret", "The Psychology of Money", "Ikigai"]
 authors = ["James Clear", "David Schwartz", "Napoleon Hill", "Rhonda Byrne", "Morgan Housel", "Héctor García and Francesc Miralles"]
+
+# List to store generated summaries
 summary_generated = []
 
-
+# Function to create chat template for each book
 def chat_template_creation(book_names, authors):
     chat_template = []
 
@@ -48,6 +51,8 @@ def chat_template_creation(book_names, authors):
 
         chat_template.append(messages)
     return chat_template
+
+# Function to generate summary for each book
 def summary_generation(message):
     print("summary_generation:", message[0].get("content"))
     chat_completion = client.chat.completions.create(
@@ -62,19 +67,21 @@ def summary_generation(message):
 
     
 
-
+# Wrapper function to pass message to summary_generation function
 def wrapper_function(message):
     print("wrapper_function", message[0].get("content"))
     summary = summary_generation(message)
     summary_generated.append(summary)
 
 
+# Create chat template for each book
 chat_template = chat_template_creation(book_names, authors)
+current_index = 0 # Global iterator
 for message in chat_template: 
     print(message[0].get("content"))
     schedule.every(5).seconds.do(wrapper_function, message)
   
-
+# Run the schedule
 while True:
     schedule.run_pending()
     time.sleep(1)
