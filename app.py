@@ -8,7 +8,6 @@ from groq import Groq
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-print(GROQ_API_KEY)
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -84,13 +83,12 @@ chat_template = chat_template_creation(book_names, authors)
 current_index = 0   # Global iterator
 
 
-schedule.every(1).minutes.do(summary_generation, chat_template)
+schedule.every(30).seconds.do(summary_generation, chat_template)
   
 # Run the schedule
 while True:
     schedule.run_pending()
     time.sleep(1)
-    print("current_index: ", current_index, "len(chat_template): ", len(chat_template)
     if current_index == len(chat_template):
         break  
     
