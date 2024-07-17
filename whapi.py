@@ -65,4 +65,5 @@ while True:
     schedule.run_pending()
     time.sleep(1)
     if current_index == len(file_name):
+        exit()        
         break  
