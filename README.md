@@ -144,4 +144,3 @@ For any inquiries or support, please contact `your-email@example.com`.
 ---
 
 This documentation should help you understand the project structure, setup, and functionality of the FastAPI application for generating book summaries.
-"""

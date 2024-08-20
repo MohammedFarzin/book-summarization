@@ -1,8 +1,9 @@
 import os
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Form, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from groq import Groq
 
 # Load environment variables
@@ -12,6 +13,7 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID')
+VALID_PASS_KEY = os.getenv('PASS_KEY')
 
 # Initialize the Groq client
 client = Groq(api_key=GROQ_API_KEY)
@@ -19,9 +21,8 @@ client = Groq(api_key=GROQ_API_KEY)
 # FastAPI app instance
 app = FastAPI()
 
-# Input model for the request
-class BookRequest(BaseModel):
-    book_name: str
+# Set up templates directory
+templates = Jinja2Templates(directory="templates")
 
 def chat_template_creation(book_name):
     messages = [
@@ -90,13 +91,35 @@ def send_message(token, channel_id, message, parse_mode='Markdown'):
     response = requests.post(url, data=payload)
     return response.json()
 
-@app.post("/generate_summary/")
-async def generate_summary(book_request: BookRequest):
-    book_name = book_request.book_name
+# Dependency to verify the pass key
+def verify_pass_key(pass_key: str = Form(...)):
+    if pass_key != VALID_PASS_KEY:
+        raise HTTPException(status_code=403, detail="Invalid pass key")
+    return pass_key
+
+@app.get("/")
+def read_root():
+    return {"Hello": "There!"}
+
+# Route to serve the HTML form and display the result on the same page
+@app.get("/generate_summary/", response_class=HTMLResponse)
+async def form_get(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request, "summary": None, "telegram_response": None, "error": None})
+
+# Route to handle form submission and display results on the same page
+@app.post("/generate_summary/", response_class=HTMLResponse)
+async def generate_summary(
+    request: Request,
+    book_name: str = Form(...),
+    pass_key: str = Form(...)
+):
+    if not verify_pass_key(pass_key):
+        return templates.TemplateResponse("home.html", {"request": request, "summary": None, "telegram_response": None, "error": "Invalid pass key. Please try again."})
+    
     try:
         chat_template = chat_template_creation(book_name)
         summary = summary_generation(chat_template)
         tg_response = send_message(TOKEN, CHANNEL_ID, summary)
-        return {"telegram_response": tg_response}
+        return templates.TemplateResponse("home.html", {"request": request, "summary": summary, "telegram_response": tg_response, "error": None})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return templates.TemplateResponse("home.html", {"request": request, "summary": None, "telegram_response": None, "error": str(e)})
