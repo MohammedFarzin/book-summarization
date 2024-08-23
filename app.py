@@ -24,46 +24,69 @@ app = FastAPI()
 # Set up templates directory
 templates = Jinja2Templates(directory="templates")
 
-def chat_template_creation(book_name):
+def chat_template_creation(book_name, format_type):
+    if format_type == 'format1':
+        content = f"""
+            Generate a summary of the book {book_name} with the following format:
+            *Book Name* by *Author Name*
+
+            *Overview*
+            Provide a brief overview of the book's content and main themes.
+
+            *Principal Insights*
+            1. Key Insight 1
+            2. Key Insight 2
+            3. Key Insight 3
+            4. Key Insight 4
+            5. Key Insight 5
+            6. Key Insight 6
+            7. Key Insight 7
+
+            *Application in Practical Life*
+            - Application Point 1
+            - Application Point 2
+            - Application Point 3
+            - Application Point 4
+            - Application Point 5
+
+            *Related Readings*
+            - _Related Book 1_ and brief description
+            - _Related Book 2_ and brief description
+            - _Related Book 3_ and brief description
+            - _Related Book 4_ and brief description
+
+            *Final Thoughts*
+            _Provide concluding thoughts on the book_.
+
+            Include the formatting symbols as specified in the format. Ensure the final thoughts content starts and ends with a underscore symbol. Enusre to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Give the summary with specified format as a python string
+            Don't use double asterisks, use only single asterisks for highlighting the text.
+        """
+    elif format_type == 'format2':
+        content = f"""
+    Generate a summary of the book {book_name} with the following format:
+    *Book Name* by *Author Name*
+
+    *Summary*
+    Provide a brief summary of the book's content, main themes, and key insights in two paragraphs.
+
+    *Thougths*
+    _Provide message obtained or concluding thoughts on the book_.
+
+    *Related Readings*
+    - _Related Book 1_ and brief description
+    - _Related Book 2_ and brief description
+    - _Related Book 3_ and brief description
+    - _Related Book 4_ and brief description
+
+    Include the formatting symbols as specified in the format. Ensure to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Provide the summary with specified format as a python string. Don't use double asterisks, use only single asterisks for highlighting the text.
+"""
+    # Add more formats as needed
+    # format3, format4, format5
+
     messages = [
         {
             "role": "system",
-            "content": f"""
-                    Generate a summary of the book {book_name} with the following format:
-                                *Book Name* by *Author Name*
-
-                                *Overview*
-                                Provide a brief overview of the book's content and main themes.
-
-                                *Principal Insights*
-                                1. Key Insight 1
-                                2. Key Insight 2
-                                3. Key Insight 3
-                                4. Key Insight 4
-                                5. Key Insight 5
-                                6. Key Insight 6
-                                7. Key Insight 7
-
-                                *Application in Practical Life*
-                                - Application Point 1
-                                - Application Point 2
-                                - Application Point 3
-                                - Application Point 4
-                                - Application Point 5
-
-                                *Related Readings*
-                                - _Related Book 1_ and brief description
-                                - _Related Book 2_ and brief description
-                                - _Related Book 3_ and brief description
-                                - _Related Book 4_ and brief description
-
-                                *Final Thoughts*
-                                _Provide concluding thoughts on the book_.
-
-                                Include the formatting symbols as specified in the format. Ensure the final thoughts content starts and ends with a underscore symbol. Enusre to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Give the summary with specified format as a python string
-                                Don't use double asterisks, use only single asterisks for highlighting the text
-                                
-                                """
+            "content": content
         },
         {
             "role": "user",
@@ -71,6 +94,7 @@ def chat_template_creation(book_name):
         }
     ]
     return messages
+
 
 def summary_generation(messages):
     chat_completion = client.chat.completions.create(
@@ -111,13 +135,14 @@ async def form_get(request: Request):
 async def generate_summary(
     request: Request,
     book_name: str = Form(...),
+    format_type: str = Form(...),
     pass_key: str = Form(...)
 ):
     if not verify_pass_key(pass_key):
         return templates.TemplateResponse("home.html", {"request": request, "summary": None, "telegram_response": None, "error": "Invalid pass key. Please try again."})
     
     try:
-        chat_template = chat_template_creation(book_name)
+        chat_template = chat_template_creation(book_name, format_type)
         summary = summary_generation(chat_template)
         tg_response = send_message(TOKEN, CHANNEL_ID, summary)
         return templates.TemplateResponse("home.html", {"request": request, "summary": summary, "telegram_response": tg_response, "error": None})
