@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Form, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from apscheduler.schedulers.background import BackgroundScheduler
 from groq import Groq
 
 # Load environment variables
@@ -20,6 +21,8 @@ client = Groq(api_key=GROQ_API_KEY)
 
 # FastAPI app instance
 app = FastAPI()
+
+scheduler = BackgroundScheduler()
 
 # Set up templates directory
 templates = Jinja2Templates(directory="templates")
@@ -63,23 +66,46 @@ def chat_template_creation(book_name, format_type):
         """
     elif format_type == 'format2':
         content = f"""
-    Generate a summary of the book {book_name} with the following format:
-    *Book Name* by *Author Name*
+                Generate a summary of the book {book_name} with the following format:
+                *Book Name* by *Author Name*
 
-    *Summary*
-    Provide a brief summary of the book's content, main themes, and key insights in two paragraphs.
+                *Summary*
+                Provide a brief summary of the book's content, main themes, and key insights in two paragraphs.
 
-    *Thougths*
-    _Provide message obtained or concluding thoughts on the book_.
+                *Thougths*
+                _Provide message obtained or concluding thoughts on the book_.
 
-    *Related Readings*
-    - _Related Book 1_ and brief description
-    - _Related Book 2_ and brief description
-    - _Related Book 3_ and brief description
-    - _Related Book 4_ and brief description
+                *Related Readings*
+                - _Related Book 1_ and brief description
+                - _Related Book 2_ and brief description
+                - _Related Book 3_ and brief description
+                - _Related Book 4_ and brief description
 
-    Include the formatting symbols as specified in the format. Ensure to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Provide the summary with specified format as a python string. Don't use double asterisks, use only single asterisks for highlighting the text.
-"""
+                Include the formatting symbols as specified in the format. Ensure to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Provide the summary with specified format as a python string. Don't use double asterisks, use only single asterisks for highlighting the text.
+            """
+    elif format_type == 'format3':
+        content = f"""
+            Summarize the key concepts and insights from the book '{book_name}'.
+            Give title as *Book Name* by *Author Name*.
+            In next line start summary in the following format:
+            This book focuses on brief_description_of_the_book's_subject, and the summary should highlight
+            the most important points in a way that is engaging and informative for a social media community.
+            Make sure the summary is concise, easily understandable, and captures the essence of the book.
+            The tone should be enthusiastic and inviting, encouraging readers to explore the book further.
+            Please include a compelling introduction and a call to action at the end.
+
+            nsure to use a single asterisk (*) for highlighting the subheadings and other keywords instead of ##. Provide the summary with specified format as a python string. Don't use double asterisks, use only single asterisks for highlighting the text.
+            """
+
+    elif format_type == 'format4':
+        content = f"""
+            Generate a concise summary of the biography book *{book_name}*.
+            Give title as *Book Name* by *Author Name*.
+            In next line start summary in the following format:
+            The summary should highlight the most compelling aspects of the subject's life, including key achievements,
+            challenges, and contributions. It should be engaging and suitable for sharing as a social media post.
+            Give the overview of the main stories described the author.
+            Use single asterisks for emphasis on key points or quotes."""
     # Add more formats as needed
     # format3, format4, format5
 
@@ -148,3 +174,24 @@ async def generate_summary(
         return templates.TemplateResponse("home.html", {"request": request, "summary": summary, "telegram_response": tg_response, "error": None})
     except Exception as e:
         return templates.TemplateResponse("home.html", {"request": request, "summary": None, "telegram_response": None, "error": str(e)})
+
+# Scheduler for keeping server on all the time
+def send_get_request():
+    url = os.getenv('HOME_URL')
+    print(url)
+    
+    try:
+        response = requests.get(url)
+        print(f"Request to {url} completed with status code: {response.status_code}. Message: {response.json()}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+# Schedule the function to run every 14 minutes
+scheduler.add_job(send_get_request, 'interval', minutes=14)
+
+# Start the scheduler
+scheduler.start()
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    scheduler.shutdown()
