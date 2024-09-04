@@ -178,7 +178,6 @@ async def generate_summary(
 # Scheduler for keeping server on all the time
 def send_get_request():
     url = os.getenv('HOME_URL')
-    print(url)
     
     try:
         response = requests.get(url)
