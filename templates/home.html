@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Book Summary</title>
+</head>
+<body>
+    <h1>Generate Book Summary</h1>
+    <form action="/generate_summary/" method="post">
+        <label for="book_name">Book Name:</label><br>
+        <input type="text" id="book_name" name="book_name" required><br><br>
+    
+        <label for="format_type">Summary Format:</label><br>
+        <select id="format_type" name="format_type" required>
+            <option value="format1">Self Help Book</option>
+            <option value="format2">Novel/Story</option>
+            <option value="format3">Non-fiction</option>
+            <option value="format4">Biography</option>
+            <!-- Add more options for other formats -->
+        </select><br><br>
+    
+        <label for="pass_key">Pass Key:</label><br>
+        <input type="password" id="pass_key" name="pass_key" required><br><br>
+        
+        <input type="submit" value="Generate Summary">
+    </form>
+    
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    {% if summary %}
+        <h2>Book Summary</h2>
+        <p>{{ summary | safe }}</p>
+    {% endif %}
+
+    {% if telegram_response %}
+        <h2>Telegram Response</h2>
+        <p>{{ telegram_response }}</p>
+    {% endif %}
+</body>
+</html>
